@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/network/axiosConfig";
+import isEmail from "validator/lib/isEmail";
 
 // 🔹 Importa los estilos de simple-datatables (requeridos para buscador/flechas)
 import "simple-datatables/dist/style.css";
@@ -166,13 +167,13 @@ export default function ListaUsuariosPage() {
     setOkMsg(null);
 
     const name = fName.trim();
-    const email = fEmail.trim();
+    const emailTrim = (email || "").trim();
     const password = fPass;
     if (!name || !email || !password) {
       setAddErr("Completa nombre, correo y contraseña.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!emailTrim || emailTrim.length > 254 || !isEmail(emailTrim)) {
       setAddErr("Correo inválido.");
       return;
     }
@@ -180,10 +181,12 @@ export default function ListaUsuariosPage() {
     try {
       setAddLoading(true);
       const res = await api.post("/admin/users", { name, email, password });
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
       const created: UserResponseDto =
         (res?.data as UserResponseDto) ??
         ({
-          id: Math.floor(Math.random() * 1_000_000),
+          id: array[0] % 1_000_000, // genera número aleatorio seguro
           email,
           is_admin: 1,
           user_status: "active",
@@ -407,3 +410,5 @@ export default function ListaUsuariosPage() {
     </div>
   );
 }
+
+
